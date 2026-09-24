@@ -1,36 +1,100 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AI 팀보드
 
-## Getting Started
+팀원이 말하듯 한 줄로 적으면 AI가 업무 카드로 정리해 주고, 팀장(HR/HRD 담당자)은 팀 전체의 진행 상황, 업무 부하, 지연 업무를 한 화면에서 봅니다. 주간 리포트도 AI가 씁니다.
 
-First, run the development server:
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2F1970jjh%2Fhyundai-ai-teamboard&project-name=hyundai-ai-teamboard&repository-name=hyundai-ai-teamboard&stores=%5B%7B%22type%22%3A%22blob%22%2C%22access%22%3A%22private%22%7D%5D)
+
+![사용자 화면](docs/screenshots/user.png)
+![관리자 대시보드](docs/screenshots/admin.png)
+
+## 무엇을 할 수 있나요
+
+**팀원 화면** (앱 주소로 들어가 내 이름 선택)
+- **AI 빠른 등록**: "다음주 수요일까지 신입 온보딩 교육장 섭외하고 강사 확정"처럼 한 줄로 적으면 AI가 제목, 마감일, 우선순위, 체크리스트로 나눠 줍니다. 저장하기 전에 내용을 고칠 수 있습니다.
+- **내 업무 보드**: 할 일, 진행 중, 완료 세 칸으로 나뉩니다. 카드는 끌어다 놓거나 버튼을 눌러 옮깁니다.
+- **내 주간보고 AI 초안**: 이번 주 카드를 읽고 «실적 / 계획 / 이슈» 형식으로 초안을 씁니다. 복사 버튼을 눌러 바로 가져다 쓰세요.
+
+**관리자 화면** (`/admin`)
+- 팀 전체 보드(담당자, 상태, 마감 필터)
+- 현황 카드(전체 업무, 진행 중, 완료율, 지연 건수)
+- 인원별 업무 부하 막대
+- 마감이 지났거나 3일 안에 마감되는 업무 목록
+- **AI 팀 주간 리포트**: 성과, 병목, 업무 재분배 제안. 복사하거나 인쇄(PDF 저장)할 수 있습니다.
+- 설정: Gemini API 키, 모델, 팀 이름, 팀원 명단, 구글시트 연결, 비밀번호 변경, CSV 내보내기, 전체 초기화
+
+로그인이나 회원가입은 없습니다. 배포 한 번에 팀 하나를 운영합니다.
+
+## 5분 설치 가이드
+
+### 준비물
+1. **GitHub 계정**: https://github.com/signup
+2. **Vercel 계정**: https://vercel.com/signup (GitHub 계정으로 가입하면 편합니다)
+3. **Gemini API 키** (무료로 발급): https://aistudio.google.com/apikey 에서 «Create API key»를 눌러 받습니다. `AIza`로 시작합니다.
+
+### 설치
+1. 이 페이지 맨 위의 **Deploy (Vercel)** 버튼을 누릅니다.
+2. GitHub 연결을 허용하고 저장소 이름을 그대로 둔 채 **Create**를 누릅니다.
+3. 저장소(Blob) 만들기 화면이 나오면 그대로 **Create / Connect**를 누릅니다. 데이터가 여기에 비공개로 저장됩니다.
+4. **Deploy**를 누르고 1~2분 기다리면 `https://<프로젝트이름>.vercel.app` 주소가 생깁니다.
+
+### 첫 설정 (관리자)
+1. `https://<내 주소>/admin` 으로 들어가 비밀번호 **`20261105`** 를 입력합니다.
+2. «관리자 설정»에서 다음 순서로 설정합니다.
+   - **팀 이름**을 저장하고 **팀원 이름**을 한 명씩 추가합니다.
+   - **Gemini API 키**를 붙여넣어 «키 저장»을 누르고, «연결 테스트»가 `연결 성공`이 나오는지 확인합니다.
+   - **관리자 비밀번호를 바로 바꿔 주세요.** 기본 비밀번호는 누구나 알 수 있습니다.
+3. 앱 주소(`https://<내 주소>`)를 팀원들에게 보내면 됩니다. 팀원은 들어와서 자기 이름만 고르면 시작할 수 있습니다.
+
+## 구글시트에 실시간으로 쌓기 (선택)
+
+카드가 새로 생기거나 바뀔 때마다 구글시트에 한 줄씩 기록됩니다. 기본값은 꺼져 있습니다. 구글 클라우드 콘솔을 쓰거나 복잡한 인증을 할 필요는 없습니다.
+
+1. 구글 드라이브에서 새 구글시트를 만듭니다.
+2. 시트 메뉴 **확장 프로그램 › Apps Script**를 엽니다. 관리자 설정의 «코드 복사» 버튼으로 복사한 코드(저장소의 `apps-script/Code.gs`와 같습니다)를 통째로 붙여넣고 저장합니다.
+3. **배포 › 새 배포 › 유형: 웹 앱**을 고르고 «실행: 나», «액세스: 모든 사용자»로 배포합니다. 권한 확인 창이 뜨면 허용합니다.
+4. 화면에 나온 웹 앱 주소(`https://script.google.com/macros/s/…/exec`)를 관리자 설정 «웹 앱 주소» 칸에 넣고 저장한 다음 **연결 테스트**를 누릅니다.
+5. 전에 쌓인 카드도 시트에 넣으려면 **지금까지 데이터 전부 보내기**를 누릅니다.
+
+시트에는 `tasks` 탭이 생기고 `ID, 담당자, 제목, 상태, 우선순위, 마감일, 체크리스트, 생성일, 수정일` 순서로 열이 채워집니다. 시트 전송에 실패해도 앱에는 정상 저장됩니다(원본 데이터는 앱에 있습니다). 실패하면 설정 화면에 마지막 오류가 표시됩니다.
+
+## 자주 묻는 질문
+
+**Q. AI 버튼을 누르면 "관리자에게 API 키 등록을 요청하세요"라고 나옵니다.**
+관리자 설정에 Gemini 키가 아직 없는 것입니다. 키를 저장하고 연결 테스트를 해 보세요. 키가 없어도 «직접 등록»으로 카드를 만들 수 있습니다.
+
+**Q. 제 API 키가 다른 사람에게 보이나요?**
+아닙니다. 키는 서버의 비공개 저장소에만 저장되고, 화면에는 `AIza…ab12`처럼 앞뒤 네 자리만 보입니다. AI 호출도 모두 서버에서 합니다.
+
+**Q. 여러 명이 동시에 카드를 저장해도 괜찮나요?**
+괜찮습니다. 카드는 한 장마다 파일 하나로 저장되기 때문에 서로 덮어쓰지 않습니다.
+
+**Q. 관리자 비밀번호를 잊어버렸어요.**
+Vercel 대시보드 › 프로젝트 › Storage › Blob 에서 `settings.json` 파일을 지우면 비밀번호가 `20261105`로 돌아갑니다. 이때 팀 이름, 명단, API 키 설정도 함께 지워지므로 다시 입력해야 합니다. 업무 카드는 그대로 남습니다.
+
+**Q. 모델은 무엇을 고르면 되나요?**
+기본값 `Gemini 3.7 Flash`를 추천합니다. 더 정교한 답이 필요하면 `3.8 Flash`, 빠르고 가벼운 쪽이 좋으면 `3.5 Flash-Lite`를 고르세요.
+
+**Q. 새 학기(분기)에 처음부터 다시 쓰고 싶어요.**
+먼저 관리자 설정 › «CSV 내보내기»로 백업해 두세요. 그다음 «전체 초기화»를 누르고 `초기화`를 입력하면 카드와 리포트가 지워집니다. 설정은 남습니다.
+
+## 개발자용
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev          # http://localhost:3000 (BLOB 토큰이 없으면 .data/ 폴더에 저장)
+npm test             # 단위 테스트 (Vitest)
+npm run test:e2e     # E2E (Playwright, 빌드 후 로컬 저장 모드로 실행)
+npm run test:live    # 실제 Gemini 호출 (.env.test.local 의 GEMINI_API_KEY_FOR_TESTS 필요)
+npm run build && npm run lint
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- Next.js 16 (App Router) · React 19 · Tailwind v4 · TypeScript · zod · @google/genai · @vercel/blob (private)
+- 환경변수는 `BLOB_READ_WRITE_TOKEN` 하나이며, Deploy 버튼으로 Blob을 연결하면 자동으로 들어갑니다. 그 밖의 설정(키, 비밀번호 해시, 세션 서명값)은 모두 앱 안에서 관리합니다.
+- 주요 파일: `lib/store.ts`(저장소), `lib/gemini.ts`(AI), `lib/sheets.ts`(구글시트), `app/api/**`(API), `components/**`(화면)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 직접 추가해 볼 기능 (교육 과제)
+알림 메일·메신저 연동, 파일 첨부, 캘린더 연동, 여러 팀 동시 운영, 개인 로그인
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+---
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+JJ Creative 교육연구소 · 2026 현대그룹 인재육성실무협의회
