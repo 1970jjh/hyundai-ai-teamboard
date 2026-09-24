@@ -64,11 +64,16 @@ export const settingsSchema = z.object({
   sheetUrl: z.string(),
   passwordHash: z.string(),
   sessionSecret: z.string(),
+  sheetSecret: z.string(),
 });
 export type Settings = z.infer<typeof settingsSchema>;
 
-/** 테스트에서만 가짜 수신 서버 주소를 허용(SHEET_URL_PREFIX_FOR_TESTS) */
-const sheetUrlPrefix = () => process.env.SHEET_URL_PREFIX_FOR_TESTS || "https://script.google.com/";
+/** Apps Script 웹 앱 주소 형식만 허용. 테스트에서만 가짜 수신 서버 주소 허용(SHEET_URL_PREFIX_FOR_TESTS) */
+export const SHEET_URL_RE = /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]{10,200}\/exec$/;
+export function isSheetUrl(u: string): boolean {
+  const testPrefix = process.env.SHEET_URL_PREFIX_FOR_TESTS;
+  return SHEET_URL_RE.test(u) || Boolean(testPrefix && URL.canParse(u) && u.startsWith(testPrefix));
+}
 
 export const settingsPatchSchema = z.object({
   teamName: z.string().trim().min(1).max(30).optional(),
@@ -79,8 +84,8 @@ export const settingsPatchSchema = z.object({
     .string()
     .trim()
     .max(300)
-    .refine((u) => u === "" || (URL.canParse(u) && u.startsWith(sheetUrlPrefix())), {
-      message: "https://script.google.com/ 으로 시작하는 웹 앱 주소를 넣어 주세요",
+    .refine((u) => u === "" || isSheetUrl(u), {
+      message: "https://script.google.com/macros/s/…/exec 형식의 웹 앱 주소를 넣어 주세요",
     })
     .optional(),
 });

@@ -5,6 +5,9 @@ export function seoulToday(now: Date = new Date()): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(now);
 }
 
+/** UTC ISO 시각 → 서울 날짜 'YYYY-MM-DD' (앞 10자를 자르면 자정~09시가 하루 전으로 보인다) */
+export const seoulDayOf = (iso: string): string => seoulToday(new Date(iso));
+
 function toUtc(ymd: string): Date {
   const [y, m, d] = ymd.split("-").map(Number);
   return new Date(Date.UTC(y, m - 1, d));

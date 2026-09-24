@@ -1,6 +1,6 @@
 import { GoogleGenAI, ThinkingLevel } from "@google/genai";
 import { z } from "zod";
-import { calendarContext, weekRange } from "./dates";
+import { calendarContext, seoulDayOf, weekRange } from "./dates";
 import { checklistProgress, memberLoads, teamStats } from "./stats";
 import {
   aiTaskSchema,
@@ -42,14 +42,30 @@ function friendlyError(e: unknown): AiError {
 
 const isRetryable = (e: unknown) => !(e instanceof AiError) || e.status >= 500;
 
-/** JSON 스키마로 응답을 받아 zod 로 검증. 실패하면 1회 재시도. */
-export async function generateJson<T>(config: AiConfig, prompt: string, schema: z.ZodType<T>): Promise<T> {
+/** 라우트 maxDuration(60초) 안에서 쓰는 AI 전체 시간 예산 — 저장·응답 여유를 남긴다. */
+export const AI_BUDGET_MS = 50_000;
+/** 남은 시간이 이보다 적으면 (재)시도하지 않는다 */
+const MIN_ATTEMPT_MS = 8_000;
+const TIMEOUT_MESSAGE = "AI 응답이 너무 오래 걸립니다. 잠시 뒤 다시 시도하거나 입력을 짧게 줄여 보세요.";
+
+const isTimeout = (e: unknown) =>
+  e instanceof Error && (e.name === "TimeoutError" || e.name === "AbortError" || /abort|timed? ?out/i.test(e.message));
+
+/** JSON 스키마로 응답을 받아 zod 로 검증. 실패하면 남은 시간 안에서 1회 재시도. */
+export async function generateJson<T>(
+  config: AiConfig,
+  prompt: string,
+  schema: z.ZodType<T>,
+  deadline = Date.now() + AI_BUDGET_MS,
+): Promise<T> {
   if (!config.apiKey) throw new AiError(NO_KEY_MESSAGE, 400);
-  const ai = new GoogleGenAI({ apiKey: config.apiKey, httpOptions: { timeout: 45_000 } });
   const jsonSchema = z.toJSONSchema(schema, { target: "draft-2020-12" });
-  let lastError: unknown;
+  let lastError: unknown = new AiError(TIMEOUT_MESSAGE, 504);
   for (let attempt = 0; attempt < 2; attempt++) {
+    const left = deadline - Date.now();
+    if (left < MIN_ATTEMPT_MS) break;
     try {
+      const ai = new GoogleGenAI({ apiKey: config.apiKey, httpOptions: { timeout: left } });
       const res = await ai.models.generateContent({
         model: config.model,
         contents: prompt,
@@ -57,12 +73,14 @@ export async function generateJson<T>(config: AiConfig, prompt: string, schema: 
           responseMimeType: "application/json",
           responseJsonSchema: jsonSchema,
           thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
+          abortSignal: AbortSignal.timeout(left),
         },
       });
       const parsed = schema.safeParse(JSON.parse(res.text ?? ""));
       if (parsed.success) return parsed.data;
       lastError = new AiError("AI 응답 형식이 올바르지 않습니다. 다시 시도하세요.");
     } catch (e) {
+      if (isTimeout(e)) throw new AiError(TIMEOUT_MESSAGE, 504);
       lastError = e instanceof SyntaxError ? new AiError("AI 응답 형식이 올바르지 않습니다. 다시 시도하세요.") : friendlyError(e);
     }
     if (!isRetryable(lastError)) break;
@@ -90,7 +108,7 @@ ${calendarContext(today)}
 const taskLine = (t: Task) =>
   `- [${STATUS_LABEL[t.status]}] ${t.title} | 우선순위 ${PRIORITY_LABEL[t.priority]} | 마감 ${t.due || "없음"}` +
   (t.checklist.length ? ` | 체크리스트 ${checklistProgress(t)} (${t.checklist.map((c) => (c.done ? "✓" : "·") + c.text).join(", ")})` : "") +
-  (t.completedAt ? ` | 완료일 ${t.completedAt.slice(0, 10)}` : "");
+  (t.completedAt ? ` | 완료일 ${seoulDayOf(t.completedAt)}` : "");
 
 export function weeklyPrompt(owner: string, tasks: Task[], today: string): string {
   const [mon, sun] = weekRange(today);

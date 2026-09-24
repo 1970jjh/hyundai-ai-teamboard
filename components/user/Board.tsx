@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { formatKoreanDate } from "@/lib/dates";
+import { formatKoreanDate, seoulDayOf } from "@/lib/dates";
 import { PRIORITY_LABEL, STATUSES, STATUS_LABEL, type Status, type Task } from "@/lib/schemas";
 import { checklistProgress, dueState } from "@/lib/stats";
 
@@ -87,7 +87,7 @@ function TaskCard({
   const progress = checklistProgress(task);
   const dueText =
     task.status === "done"
-      ? `${formatKoreanDate((task.completedAt || task.updatedAt).slice(0, 10))} 완료`
+      ? `${formatKoreanDate(seoulDayOf(task.completedAt || task.updatedAt))} 완료`
       : task.due
         ? `${formatKoreanDate(task.due)} 마감${state === "overdue" ? " · 지남" : state === "soon" ? " · 임박" : ""}`
         : "마감 없음";

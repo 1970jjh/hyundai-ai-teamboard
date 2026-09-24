@@ -1,10 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { addDays, calendarContext, daysBetween, formatKoreanDate, seoulToday, weekRange, weekdayOf } from "@/lib/dates";
+import { addDays, calendarContext, daysBetween, formatKoreanDate, seoulDayOf, seoulToday, weekRange, weekdayOf } from "@/lib/dates";
 
 describe("날짜(Asia/Seoul)", () => {
   it("UTC 자정 전이라도 서울이 다음 날이면 다음 날", () => {
     expect(seoulToday(new Date("2026-09-24T15:30:00Z"))).toBe("2026-09-25");
     expect(seoulToday(new Date("2026-09-24T14:59:00Z"))).toBe("2026-09-24");
+  });
+  it("완료 시각(UTC) → 서울 날짜: 한국 9/25 00:30 완료는 9/25", () => {
+    expect(seoulDayOf("2026-09-24T15:30:00.000Z")).toBe("2026-09-25");
+    expect(formatKoreanDate(seoulDayOf("2026-09-24T15:30:00.000Z"))).toBe("9월 25일");
   });
   it("더하기·차이·요일", () => {
     expect(addDays("2026-09-30", 1)).toBe("2026-10-01");

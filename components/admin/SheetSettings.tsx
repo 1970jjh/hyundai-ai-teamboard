@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { APPS_SCRIPT_CODE } from "@/lib/appsScriptCode";
+import { appsScriptCodeFor } from "@/lib/appsScriptCode";
 import { api, copyText, errorText } from "@/lib/client";
 import type { SettingsPatch } from "@/lib/schemas";
 import type { Overview } from "./AdminApp";
@@ -22,6 +22,7 @@ export function SheetSettings({ data, save, reload, toast }: Props) {
   const [busy, setBusy] = useState("");
   const { lastError, lastErrorAt, lastOkAt } = data.sheetStatus;
   const errorIsLatest = lastErrorAt && (!lastOkAt || lastErrorAt > lastOkAt);
+  const code = appsScriptCodeFor(data.settings.sheetSecret);
 
   const run = async (action: "test" | "resend") => {
     setBusy(action);
@@ -46,9 +47,9 @@ export function SheetSettings({ data, save, reload, toast }: Props) {
         <li>나온 웹 앱 주소(…/exec)를 아래 칸에 붙여넣고 저장 → «연결 테스트».</li>
       </ol>
       <label htmlFor="s-code">Apps Script 코드</label>
-      <textarea id="s-code" readOnly value={APPS_SCRIPT_CODE} onFocus={(e) => e.currentTarget.select()} />
+      <textarea id="s-code" readOnly value={code} onFocus={(e) => e.currentTarget.select()} />
       <div className="settings-actions">
-        <button className="button small light" onClick={async () => toast((await copyText(APPS_SCRIPT_CODE)) ? "코드를 복사했습니다" : "코드 칸을 눌러 직접 복사하세요")}>
+        <button className="button small light" onClick={async () => toast((await copyText(code)) ? "코드를 복사했습니다" : "코드 칸을 눌러 직접 복사하세요")}>
           코드 복사
         </button>
       </div>

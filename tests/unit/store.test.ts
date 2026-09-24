@@ -55,3 +55,29 @@ describe("로컬 저장소", () => {
     expect(values.map((v) => v?.id).sort()).toEqual([...ids].sort());
   });
 });
+
+describe("로컬 저장소 — 조건부 쓰기(updateJson)", () => {
+  it("동시에 20번 고쳐도 하나도 잃지 않는다", async () => {
+    await store.putJson("settings.json", { n: 0, tags: [] as number[] });
+    await Promise.all(
+      Array.from({ length: 20 }, (_, i) =>
+        store.updateJson<{ n: number; tags: number[] }>("settings.json", (cur) => ({ n: cur!.n + 1, tags: [...cur!.tags, i] })),
+      ),
+    );
+    const v = await store.getJson<{ n: number; tags: number[] }>("settings.json");
+    expect(v?.n).toBe(20);
+    expect(v?.tags).toHaveLength(20);
+  });
+  it("없는(지워진) 레코드는 fn 이 null 을 주면 되살리지 않는다", async () => {
+    expect(await store.updateJson("tasks/gone.json", (cur) => (cur ? cur : null))).toBeNull();
+    expect(await store.getJson("tasks/gone.json")).toBeNull();
+  });
+  it("삭제와 수정이 겹쳐도 삭제가 이기면 수정이 되살리지 않는다", async () => {
+    await store.putJson("tasks/x.json", { v: 1 });
+    await Promise.all([
+      store.delete("tasks/x.json"),
+      store.updateJson<{ v: number }>("tasks/x.json", (cur) => (cur ? { v: cur.v + 1 } : null)),
+    ]);
+    expect(await store.getJson("tasks/x.json")).toBeNull();
+  });
+});

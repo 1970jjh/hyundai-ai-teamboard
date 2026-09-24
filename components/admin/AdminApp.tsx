@@ -121,6 +121,7 @@ function Dashboard({ data, reload, setData, toast, onLogout }: DashboardProps) {
   const alerts = deadlineAlerts(tasks, today);
   return (
     <>
+      {settings.defaultPassword && <DefaultPasswordBanner />}
       <div className="admin-lede">
         <Metrics stats={stats} />
         <Callout data={data} overdue={stats.overdue} soon={stats.soon} />
@@ -179,6 +180,27 @@ function Callout({ data, overdue, soon }: { data: Overview; overdue: number; soo
             ? "최근 AI 팀 리포트의 한 줄 요약입니다. 아래에서 새로 생성할 수 있습니다."
             : "AI 팀 리포트를 생성하면 이 자리에 한 줄 요약이 표시됩니다."}
       </p>
+    </div>
+  );
+}
+
+/** 공개된 기본 비밀번호로 로그인 중일 때 — 강제하지 않고 눈에 띄게 알린다 */
+function DefaultPasswordBanner() {
+  const goChange = () => {
+    const details = document.getElementById("admin-settings");
+    if (details instanceof HTMLDetailsElement) details.open = true;
+    const input = document.getElementById("s-pw");
+    input?.scrollIntoView({ behavior: "smooth", block: "center" });
+    input?.focus({ preventScroll: true });
+  };
+  return (
+    <div className="pw-warning" role="alert" data-testid="default-password-warning">
+      <p>
+        <strong>기본 비밀번호(20261105)를 쓰고 있습니다.</strong> 안내문에 공개된 번호라 누구나 관리자 화면에 들어와 키와 데이터를 바꿀 수 있습니다.
+      </p>
+      <button className="button small light" onClick={goChange}>
+        지금 비밀번호 바꾸기
+      </button>
     </div>
   );
 }

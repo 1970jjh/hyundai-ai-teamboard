@@ -15,11 +15,11 @@ export async function POST(req: Request) {
     if (denied) return denied;
     const body = await readBody(req, actionSchema);
     if ("error" in body) return body.error;
-    const { sheetUrl } = await getSettings();
+    const { sheetUrl, sheetSecret } = await getSettings();
     if (!sheetUrl) return fail("먼저 웹 앱 주소를 저장하세요");
     const payload: SheetPayload =
       body.data.action === "test" ? { type: SHEET_TYPE, action: "ping" } : replaceAllPayload(await listTasks());
-    const result = await postToSheet(sheetUrl, payload);
+    const result = await postToSheet({ url: sheetUrl, secret: sheetSecret }, payload);
     await recordSheetResult(result);
     return result.ok ? ok({ action: body.data.action }) : fail(result.error ?? "시트 전송 실패", 502);
   } catch (e) {

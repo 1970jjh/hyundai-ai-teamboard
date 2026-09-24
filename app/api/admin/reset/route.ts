@@ -17,8 +17,8 @@ export async function POST(req: Request) {
     if ("error" in body) return body.error;
     const deleted = await deleteAllTasks();
     await deleteTeamReport();
-    const { sheetUrl } = await getSettings();
-    after(() => syncToSheet(sheetUrl, replaceAllPayload([])));
+    const settings = await getSettings();
+    after(() => syncToSheet(settings, replaceAllPayload([])));
     return ok({ deleted });
   } catch (e) {
     return handleError(e);

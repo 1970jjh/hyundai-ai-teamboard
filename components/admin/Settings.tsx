@@ -32,12 +32,13 @@ export function Settings({ data, setData, reload, toast, onLogout }: Props) {
   };
 
   return (
-    <details className="settings" open={openAtStart}>
+    // 설정을 펼칠 때 최신 상태(시트 자동 전송 오류 등)를 다시 읽는다
+    <details className="settings" id="admin-settings" open={openAtStart} onToggle={(e) => e.currentTarget.open && reload()}>
       <summary>관리자 설정 ＋</summary>
       <TeamBlock s={s} save={save} />
       <AiBlock s={s} save={save} toast={toast} />
       <SheetSettings data={data} save={save} reload={reload} toast={toast} />
-      <SecurityBlock toast={toast} />
+      <SecurityBlock toast={toast} reload={reload} />
       <DataBlock toast={toast} reload={reload} onLogout={onLogout} />
     </details>
   );
@@ -161,7 +162,7 @@ function AiBlock({ s, save, toast }: { s: AdminSettingsView; save: Save; toast: 
   );
 }
 
-function SecurityBlock({ toast }: { toast: (t: string) => void }) {
+function SecurityBlock({ toast, reload }: { toast: (t: string) => void; reload: () => Promise<void> }) {
   const [pw, setPw] = useState("");
   const [pw2, setPw2] = useState("");
   const change = async () => {
@@ -171,6 +172,7 @@ function SecurityBlock({ toast }: { toast: (t: string) => void }) {
       setPw("");
       setPw2("");
       toast("비밀번호를 바꿨습니다 · 다른 기기는 다시 로그인해야 합니다");
+      await reload();
     } catch (e) {
       toast(errorText(e));
     }

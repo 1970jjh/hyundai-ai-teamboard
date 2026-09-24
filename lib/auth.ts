@@ -1,6 +1,10 @@
 import { createHmac, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 
 export const DEFAULT_PASSWORD = "20261105";
+/** 첫 실행 비밀번호 — ADMIN_PASSWORD 환경변수가 있으면 그것, 없으면 공개된 기본값 */
+export const initialPassword = () => process.env.ADMIN_PASSWORD?.trim() || DEFAULT_PASSWORD;
+/** README 에 공개된 기본 비밀번호를 아직 쓰는 중인가 */
+export const isDefaultPassword = (passwordHash: string) => verifyPassword(DEFAULT_PASSWORD, passwordHash);
 export const SESSION_COOKIE = "tb_admin";
 export const SESSION_TTL_SECONDS = 12 * 60 * 60;
 

@@ -1,6 +1,6 @@
 import { seoulToday } from "@/lib/dates";
 import { writeWeeklyReport } from "@/lib/gemini";
-import { fail, handleError, ok, readBody } from "@/lib/http";
+import { fail, handleError, limitByIp, ok, readBody } from "@/lib/http";
 import { ownerSchema } from "@/lib/schemas";
 import { getSettings } from "@/lib/settings";
 import { listTasks } from "@/lib/tasks";
@@ -9,6 +9,8 @@ export const maxDuration = 60;
 
 export async function POST(req: Request) {
   try {
+    const limited = limitByIp(req, "ai");
+    if (limited) return limited;
     const body = await readBody(req, ownerSchema);
     if ("error" in body) return body.error;
     const s = await getSettings();

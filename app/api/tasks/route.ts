@@ -1,5 +1,5 @@
 import { after } from "next/server";
-import { fail, handleError, ok, readBody } from "@/lib/http";
+import { fail, handleError, limitByIp, ok, readBody } from "@/lib/http";
 import { taskInputSchema } from "@/lib/schemas";
 import { getSettings } from "@/lib/settings";
 import { syncToSheet, upsertPayload } from "@/lib/sheets";
@@ -19,12 +19,14 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
+    const limited = limitByIp(req, "write");
+    if (limited) return limited;
     const body = await readBody(req, taskInputSchema);
     if ("error" in body) return body.error;
     const settings = await getSettings();
     if (!settings.members.includes(body.data.owner)) return fail("팀원 명단에 없는 이름입니다");
     const task = await createTask(body.data);
-    after(() => syncToSheet(settings.sheetUrl, upsertPayload(task)));
+    after(() => syncToSheet(settings, upsertPayload(task)));
     return ok(task, { status: 201 });
   } catch (e) {
     return handleError(e);

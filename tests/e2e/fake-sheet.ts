@@ -12,6 +12,7 @@ export default async function globalSetup() {
     req.on("end", () => {
       res.setHeader("Content-Type", "application/json");
       if (req.method === "GET" && req.url === "/received") return res.end(JSON.stringify(received));
+      if (req.url === "/fail") return res.end(JSON.stringify({ ok: false, error: "시트가 거부함" }));
       try {
         received.push({ at: Date.now(), ...JSON.parse(body) });
         res.end(JSON.stringify({ ok: true }));

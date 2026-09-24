@@ -24,8 +24,14 @@ describe("카드 입력 검증", () => {
 describe("설정 검증", () => {
   it("시트 주소는 Apps Script 주소만(빈 값은 끄기)", () => {
     expect(settingsPatchSchema.safeParse({ sheetUrl: "" }).success).toBe(true);
-    expect(settingsPatchSchema.safeParse({ sheetUrl: "https://script.google.com/macros/s/abc/exec" }).success).toBe(true);
-    expect(settingsPatchSchema.safeParse({ sheetUrl: "https://evil.example.com/x" }).success).toBe(false);
+    const ok = (u: string) => settingsPatchSchema.safeParse({ sheetUrl: u }).success;
+    expect(ok("https://script.google.com/macros/s/AKfycbx3Q_abc-DEF1234567890/exec")).toBe(true);
+    expect(ok("https://evil.example.com/x")).toBe(false);
+    // script.google.com 이어도 웹 앱 exec 형식이 아니면 거부
+    expect(ok("https://script.google.com/macros/s/AKfycbx3Q_abc-DEF1234567890/dev")).toBe(false);
+    expect(ok("https://script.google.com/home")).toBe(false);
+    expect(ok("https://script.google.com.evil.com/macros/s/AKfycbx3Q_abc-DEF1234567890/exec")).toBe(false);
+    expect(ok("https://script.google.com/macros/s/AKfycbx3Q_abc-DEF1234567890/exec?x=1")).toBe(false);
     expect(settingsPatchSchema.safeParse({ sheetUrl: "http://127.0.0.1/x" }).success).toBe(false);
   });
   it("모델은 정해진 3가지만", () => {

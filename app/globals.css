@@ -180,6 +180,8 @@ a { color: inherit; }
 .chip button { border: 0; background: none; color: var(--rust); font-size: 14px; line-height: 1; padding: 0 4px; }
 .inline-form { display: flex; gap: 6px; }
 .steps { margin: 0 0 10px; padding-left: 18px; font-size: 11px; line-height: 1.8; color: var(--ink); list-style: decimal; }
+.pw-warning { display: flex; gap: 14px; align-items: center; justify-content: space-between; flex-wrap: wrap; margin: 20px 0 0; padding: 14px 18px; background: var(--rust); color: #fff; }
+.pw-warning p { margin: 0; font-size: 13px; line-height: 1.6; flex: 1 1 280px; }
 .status-line { font-size: 11px; margin-top: 8px; color: var(--muted); }
 .status-line.bad { color: var(--rust); font-weight: 700; }
 .status-line.good { color: var(--green); font-weight: 700; }

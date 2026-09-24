@@ -45,11 +45,9 @@ export function mergeTask(task: Task, patch: TaskPatch, now: string): Task {
 }
 
 export async function updateTask(id: string, patch: TaskPatch, now = new Date().toISOString()): Promise<Task | null> {
-  const task = await getTask(id);
-  if (!task) return null;
-  const next = mergeTask(task, patch, now);
-  await getStore().putJson(keyOf(id), next);
-  return next;
+  if (!isTaskId(id)) return null;
+  // 조건부 쓰기: 동시 수정은 재시도로 합치고, 그 사이 지워졌으면(null) 되살리지 않는다.
+  return getStore().updateJson<Task>(keyOf(id), (cur) => (cur ? mergeTask(cur, patch, now) : null));
 }
 
 export async function deleteTask(id: string): Promise<boolean> {

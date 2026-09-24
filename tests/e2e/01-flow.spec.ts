@@ -179,6 +179,10 @@ test("구글시트: 연결 테스트 → 새 카드가 10초 안에 한 줄로 �
   const upsert = (await sheetReceived(request)).find((p) => p.action === "upsert" && p.id === task.id)!;
   expect(Number(upsert.at) - started).toBeLessThan(10_000);
   expect(upsert.type).toBe("tasks");
+  // 시트 비밀값: 관리자 화면의 복사용 Apps Script 코드에 들어간 값과 같은 값이 함께 온다
+  expect(upsert.secret).toMatch(/^[a-f0-9]{64}$/);
+  await expect(page.locator("#s-code")).toHaveValue(new RegExp(`var SECRET = '${upsert.secret}';`));
+  expect(upsert.updatedAt).toBeTruthy();
   expect(upsert.row).toMatchObject({ ID: task.id, 담당자: "김지현", 제목: "시트로 가는 카드", 상태: "할 일", 우선순위: "보통", 마감일: seoulDate(3) });
 
   const upd = await request.patch(`/api/tasks/${task.id}`, { data: { status: "doing" } });
@@ -193,7 +197,22 @@ test("구글시트: 연결 테스트 → 새 카드가 10초 안에 한 줄로 �
   await expect(page.locator(".toast")).toContainText("시트로 모두 보냈습니다");
   const all = (await sheetReceived(request)).filter((p) => p.action === "replace_all").at(-1)!;
   expect((all.rows as unknown[]).length).toBe(4);
-  expect(all.headers).toEqual(["ID", "담당자", "제목", "상태", "우선순위", "마감일", "체크리스트", "생성일", "수정일"]);
+  expect(all.headers).toEqual(["ID", "담당자", "제목", "상태", "우선순위", "마감일", "체크리스트", "생성일", "수정일", "버전"]);
+
+  // 자동 전송 오류는 설정을 다시 펼칠 때 새로 읽어 보여 준다
+  await page.getByLabel("웹 앱 주소").fill("http://127.0.0.1:3199/fail");
+  await page.locator(".settings-block", { hasText: "구글시트" }).getByRole("button", { name: "저장" }).click();
+  await expect(page.locator(".toast")).toContainText("시트 주소를 저장했습니다");
+  await createTaskApi(request, { owner: "김지현", title: "실패할 전송" });
+  const summary = page.locator("details.settings > summary");
+  await expect(async () => {
+    await summary.click();
+    await summary.click();
+    await expect(page.locator(".status-line.bad")).toContainText("시트가 거부함", { timeout: 1000 });
+  }).toPass({ timeout: 10_000 });
+  await page.getByLabel("웹 앱 주소").fill(SHEET_URL);
+  await page.locator(".settings-block", { hasText: "구글시트" }).getByRole("button", { name: "저장" }).click();
+  await expect(page.locator(".toast")).toContainText("시트 주소를 저장했습니다");
 });
 
 test("동시성: 5명이 동시에 등록해도 유실 없음", async ({ page, request }) => {
@@ -213,10 +232,16 @@ test("입력 검증: 명단에 없는 이름·잘못된 값은 거부", async ({
 
 test("비밀번호 변경 → 옛 비밀번호 거부 → 새 비밀번호로 로그인 → 원복", async ({ page }) => {
   await adminLogin(page);
+  // 공개된 기본 비밀번호로 로그인 중 → 경고 배너 + 변경 바로가기(강제는 아님)
+  const warning = page.getByTestId("default-password-warning");
+  await expect(warning).toContainText("기본 비밀번호");
+  await warning.getByRole("button", { name: "지금 비밀번호 바꾸기" }).click();
+  await expect(page.getByLabel("새 비밀번호 (6자 이상)")).toBeFocused();
   await page.getByLabel("새 비밀번호 (6자 이상)").fill("newpass123");
   await page.getByLabel("한 번 더").fill("newpass123");
   await page.getByRole("button", { name: "비밀번호 변경" }).click();
   await expect(page.locator(".toast")).toContainText("비밀번호를 바꿨습니다");
+  await expect(warning).toHaveCount(0);
   await page.getByRole("button", { name: "로그아웃" }).click();
   await expect(page.getByLabel("관리자 비밀번호")).toBeVisible();
 

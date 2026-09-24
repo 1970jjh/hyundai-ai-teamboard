@@ -63,6 +63,23 @@ describe("업무 카드", () => {
     expect(await deleteTask(t.id)).toBe(false);
     expect(await updateTask(t.id, { status: "doing" })).toBeNull();
   });
+  it("같은 카드의 동시 수정(상태 + 제목 + 체크리스트)이 서로를 지우지 않는다", async () => {
+    const t = await createTask(input("동시 수정 카드"));
+    await Promise.all([
+      updateTask(t.id, { status: "doing" }),
+      updateTask(t.id, { title: "바뀐 제목" }),
+      updateTask(t.id, { checklist: [{ text: "단계", done: true }] }),
+    ]);
+    expect(await getTask(t.id)).toMatchObject({ status: "doing", title: "바뀐 제목", checklist: [{ text: "단계", done: true }] });
+  });
+  it("삭제와 수정이 동시에 와도 삭제된 카드가 되살아나지 않는다", async () => {
+    const t = await createTask(input("지울 카드"));
+    await Promise.all([deleteTask(t.id), updateTask(t.id, { status: "done" })]);
+    expect(await getTask(t.id)).toBeNull();
+    // 삭제 뒤 늦게 도착한 수정도 되살리지 않는다
+    expect(await updateTask(t.id, { status: "doing" })).toBeNull();
+    expect(await getTask(t.id)).toBeNull();
+  });
   it("완료 해제하면 완료일도 지운다", () => {
     const t = makeTask({ status: "done", completedAt: "2026-09-20T00:00:00.000Z" });
     expect(mergeTask(t, { status: "doing" }, "2026-09-25T00:00:00.000Z").completedAt).toBe("");
