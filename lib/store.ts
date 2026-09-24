@@ -146,7 +146,7 @@ export function createBlobStore(): Store {
     // useCache:false → 방금 쓴 내용을 바로 읽는다(CDN 캐시 우회).
     const res = await get(key, { access: "private", useCache: false });
     if (!res || res.statusCode !== 200) return null;
-    return { value: JSON.parse(await new Response(res.stream).text()) as T, etag: res.blob.etag };
+    return { value: JSON.parse(await new Response(res.stream).text()) as T, etag: res.blob.etag.replace(/^W\//, "") }; // 압축 응답은 약한 ETag(W/"…") → ifMatch 에는 강한 ETag 가 필요
   };
   const write = (key: string, value: unknown, opts: { createOnly?: boolean; ifMatch?: string }) =>
     put(key, JSON.stringify(value), {
