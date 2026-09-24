@@ -69,7 +69,7 @@ export const settingsSchema = z.object({
 export type Settings = z.infer<typeof settingsSchema>;
 
 /** Apps Script 웹 앱 주소 형식만 허용. 테스트에서만 가짜 수신 서버 주소 허용(SHEET_URL_PREFIX_FOR_TESTS) */
-export const SHEET_URL_RE = /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]{10,200}\/exec$/;
+export const SHEET_URL_RE = /^https:\/\/script\.google\.com\/(?:a\/macros\/[A-Za-z0-9.-]{1,100}|macros)\/s\/[A-Za-z0-9_-]{10,200}\/exec$/;
 export function isSheetUrl(u: string): boolean {
   const testPrefix = process.env.SHEET_URL_PREFIX_FOR_TESTS;
   return SHEET_URL_RE.test(u) || Boolean(testPrefix && URL.canParse(u) && u.startsWith(testPrefix));
