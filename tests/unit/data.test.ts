@@ -43,7 +43,7 @@ describe("설정", () => {
     expect(s.model).toBe("gemini-3.7-flash");
   });
   it("키는 가려서만 보여 준다", async () => {
-    await updateSettings({ geminiKey: "AIzaSyTESTKEY000000000000000000ab12" });
+    await updateSettings({ geminiKey: "AIza.fake.TESTKEY.not.real.ab12" });
     const view = adminView(await getSettings());
     expect(view.keyMasked).toBe("AIza…ab12");
     expect(JSON.stringify(view)).not.toContain("TESTKEY");

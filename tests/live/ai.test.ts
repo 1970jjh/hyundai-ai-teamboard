@@ -76,6 +76,6 @@ describe.skipIf(!apiKey)("라이브 Gemini (gemini-3.7-flash)", () => {
   });
 
   it("틀린 키는 친절한 한국어 오류", async () => {
-    await expect(testConnection({ apiKey: "AIzaInvalidKeyForTest000000000000000", model: c.model })).rejects.toThrow(/키가 올바르지/);
+    await expect(testConnection({ apiKey: "invalid-key-for-test-only", model: c.model })).rejects.toThrow(/키가 올바르지/);
   });
 });
