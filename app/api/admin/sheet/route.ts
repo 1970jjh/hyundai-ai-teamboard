@@ -4,7 +4,7 @@ import { getSettings } from "@/lib/settings";
 import { postToSheet, recordSheetResult, replaceAllPayload, SHEET_TYPE, type SheetPayload } from "@/lib/sheets";
 import { listTasks } from "@/lib/tasks";
 
-export const maxDuration = 30;
+export const maxDuration = 60;
 
 const actionSchema = z.object({ action: z.enum(["test", "resend"]) });
 

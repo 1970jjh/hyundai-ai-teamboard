@@ -68,7 +68,7 @@ export interface SendOptions {
 }
 type Result = { ok: boolean; error?: string; retry?: boolean };
 
-const DEFAULTS: Required<SendOptions> = { timeoutMs: 5000, backoffMs: [300, 1000], budgetMs: 20_000 };
+const DEFAULTS: Required<SendOptions> = { timeoutMs: 15_000, backoffMs: [300, 1000], budgetMs: 40_000 };
 
 /** Apps Script 는 POST 결과를 script.googleusercontent.com 으로 302 한다 — 그곳만 따라간다. */
 function isAllowedRedirect(location: string): boolean {
